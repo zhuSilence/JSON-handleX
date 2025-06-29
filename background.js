@@ -131,7 +131,7 @@ var Http = (function () {
 
 
 function openJH() {
-	var jsonH_url = chrome.extension.getURL("JSON-handle/JSON-handle.html");
+	var jsonH_url = chrome.extension.getURL("JSON-path/JSON-path.html");
 	var oIni = JSON.parse(localStorage['jhIni'] || {});
 	if(oIni.openJhMode === 'tab') {
 		chrome.tabs.create({"url":jsonH_url, "selected":true});
@@ -196,7 +196,7 @@ chrome.extension.onRequest.addListener(function (request, sender, sendResponse) 
 			break;
 		case 'getJhData':
 			sendResponse({
-				jhPath : chrome.extension.getURL('JSON-handle/')
+				jhPath : chrome.extension.getURL('JSON-path/')
 			});
 			break;
 		case 'env js ok':
@@ -267,7 +267,7 @@ var contextsMenu = (function () {
 			if(oIni.contextsMenu) {
 				contexts.forEach(function (name) {
 					chrome.contextMenus.create({
-						"title": 'JSON-Handle (' + name + ')', 
+						"title": 'JSON-path (' + name + ')', 
 						"contexts":[name],
 						"onclick": _pri.genericOnClick
 					});

@@ -1,0 +1,28 @@
+{
+    "name": "BeJson",
+    "url": "http://www.bejson.com",
+    "page": 88,
+    "isNonProfit": true,
+    "address": {
+        "street": "first street",
+        "city": "new city",
+        "country": "new country"
+    },
+    "links": [
+        {
+            "name": "Google",
+            "flag": true,
+            "url": "http://www.google.com"
+        },
+        {
+            "name": "Baidu",
+            "flag": true,
+            "url": "http://www.baidu.com"
+        },
+        {
+            "name": "SoSo",
+            "flag": false,
+            "url": "http://www.SoSo.com"
+        }
+    ]
+}

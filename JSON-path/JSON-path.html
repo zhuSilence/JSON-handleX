@@ -3,7 +3,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<meta http-equiv="Content-Language" content="zh-cn" />
-		<title> JSON-handle </title>
+		<title> JSON-path </title>
 		<link rel="Shortcut Icon" href="logo.ico" type="image/x-icon" />
 		<link rel="Bookmark" href="logo.ico" type="image/x-icon" />
 		<meta name="author" content="jsonhandle@gmail.com" />
@@ -33,7 +33,7 @@
 		<div id="panel" class="min disTransition" style="display:none;"><span id="minBtn">◥</span>
 			<div id="valueAct">
 				<div class="topBox">
-				<span class="inputTitle langID_title_1">Path: </span><input type="text" id="showPath" class="textInpub" /><br />
+				<span class="inputTitle langID_title_1">Path: </span><input type="text" id="showPath" class="textInpub" placeholder="JSON.links[*].url" /><br />
 				<span class="lableInput"><span class="inputTitle langID_title_2">Key: </span><input type="text" id="showKey" class="textInpub" /><span> :</span></span>
 				<span>
 					<button id="copyValue" class="langID_button_9 langTitleID_tips_1">复制</button>
@@ -43,6 +43,11 @@
 					<span id="deError" class="deError-tips"></span>
 					<span id="copyTips" class="copy-tips langID_msg_6"></span>
 				</span><br />
+				<span class="inputTitle">Tools:</span>
+				<span>
+					<button id="insertTemplateBtn" class=" langTitleID_tips_5">template</button>
+					<button id="saveAsTemplateBtn" class=" langTitleID_tips_6">saveAsTemplate</button>
+				</span>
 
 				</div>
 				<textarea id="showValue" rows="22" cols="66" spellcheck="false"></textarea><br />

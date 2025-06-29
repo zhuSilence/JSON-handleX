@@ -1,0 +1,38 @@
+{
+  "env": "production",
+  "debug": false,
+  "apiBase": "https://api.example.com/v1/",
+  "features": {
+    "login": true,
+    "register": true,
+    "analytics": false,
+    "multiLanguage": true,
+    "darkMode": true
+  },
+  "database": {
+    "host": "db.example.com",
+    "port": 3306,
+    "username": "admin",
+    "password": "password",
+    "dbName": "app_db"
+  },
+  "logging": {
+    "level": "info",
+    "file": "/var/log/app.log",
+    "maxSizeMB": 10
+  },
+  "auth": {
+    "jwtSecret": "your_jwt_secret_key",
+    "tokenExpire": 3600
+  },
+  "mail": {
+    "smtpHost": "smtp.example.com",
+    "smtpPort": 465,
+    "user": "noreply@example.com",
+    "pass": "mailpassword"
+  },
+  "allowedOrigins": [
+    "https://www.example.com",
+    "https://admin.example.com"
+  ]
+} 

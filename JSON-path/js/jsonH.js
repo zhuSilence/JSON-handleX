@@ -1,4 +1,3 @@
-
 JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (modName, JH, $$) {
 
 		var _interface = [];
@@ -128,7 +127,9 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 					_pub.oJson = JSON5.parse(sJson);
 					_pro.oTreeNav.build(_pub.oJson);
 				}catch(e) {
-					_pri.showEnterInputDialog(sJson);
+					var errorLine = e.lineNumber || null;
+					var errorCol = e.columnNumber || null;
+					_pri.showEnterInputDialog(sJson, e.message, errorLine, errorCol);
 					top.postMessage({
 						cmd : 'jhLoadedError',
 						msg : e.message
@@ -218,7 +219,9 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 				copyValue : JH.e('#copyValue'),
 				deURI : JH.e('#deURI'),
 				deBase64 : JH.e('#deBase64'),
-				aLine : JH.e('#aLine'),
+				aLine: JH.e('#aLine'),
+				insertTemplateBtn : JH.e('#insertTemplateBtn'),
+				saveAsTemplateBtn : JH.e('#saveAsTemplateBtn'),
 				showPath : JH.e('#showPath'),
 				copyTips : JH.e('#copy-tips'),
 				rcmd : JH.e('#rcmd'),
@@ -226,10 +229,7 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 				closeAd : JH.e('#closeAd'),
 				redoBtn : JH.e('#redoBtn')
 			};
-
 		};
-
-
 
 
 		_uiEvt = function () {
@@ -252,6 +252,8 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 			$(_pri.node['deURI']).on('click', _pri.uiEvtCallback.clickDeURI);
 			$(_pri.node['deBase64']).on('click', _pri.uiEvtCallback.clickDeBase64);
 			$(_pri.node['aLine']).on('click', _pri.uiEvtCallback.clickALine);
+			$(_pri.node['insertTemplateBtn']).on('click', _pri.uiEvtCallback.showTemplateDialog);
+			$(_pri.node['saveAsTemplateBtn']).on('click', _pri.uiEvtCallback.saveAsTemplateBtn);
 			$(_pri.node['showPath']).on('input', _pri.uiEvtCallback.inputShowPath);
 			$(_pri.node['rcmd']).on('click', _pri.uiEvtCallback.clickRcmd);
 			$(_pri.node['closeAd']).on('click', _pri.uiEvtCallback.clickCloseAd);
@@ -528,6 +530,86 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 				clickALine : function () {
 					var eV = $('#showValue')[0];
 					eV.value = JSON5.stringify($('#showValue').prop('oData'));
+				},
+				showTemplateDialog: function showTemplateDialog() {
+					loadTemplates(function(list) {
+						// 遮罩
+						var mask = document.createElement('div');
+						mask.id = 'templateDialogMask';
+						mask.style = 'position:fixed;z-index:9998;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);';
+						document.body.appendChild(mask);
+						// 弹窗
+						var html = '<div id="templateDialog" style="position:fixed;z-index:9999;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:10px;box-shadow:0 4px 24px #0002;padding:28px 28px 18px 28px;min-width:220px;max-width:90vw;min-height:80px;">';
+						html += '<div style="position:absolute;top:10px;right:16px;cursor:pointer;font-size:20px;color:#888;" id="closeTemplateDialog">×</div>';
+						html += '<h3 style="margin:0 0 18px 0;font-size:18px;text-align:center;">选择模板</h3>';
+						html += '<div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;">';
+						for(var i=0;i<list.length;i++){
+							html += '<button class="insertTemplateBtn" data-file="'+list[i].file+'" style="padding:8px 0;border-radius:6px;border:1px solid #ddd;background:#f7f7f7;font-size:15px;cursor:pointer;transition:background 0.2s;">'+list[i].name+'</button>';
+						}
+						html += '</div>';
+						html += '</div>';
+						$(document.body).append(html);
+						// 按钮高亮
+						$(document).on('mouseenter', '.insertTemplateBtn', function(){ $(this).css('background','#e6f7ff'); });
+						$(document).on('mouseleave', '.insertTemplateBtn', function(){ $(this).css('background','#f7f7f7'); });
+						// 事件绑定（只绑定一次）
+						$(document).off('click.insertTemplateBtn').on('click.insertTemplateBtn', '.insertTemplateBtn', function(){
+							var file = $(this).data('file');
+							loadTemplateContent(file, function (content) {
+								if(_pri.node.enterValue){
+									_pri.node.enterValue.value = content;
+								}
+								$('#templateDialog').remove();
+								$('#templateDialogMask').remove();
+								$('#enterOk').click(); 
+							});
+						});
+						// 关闭按钮
+						$(document).off('click.closeTemplateDialog').on('click.closeTemplateDialog', '#closeTemplateDialog', function(){
+							$('#templateDialog').remove();
+							$('#templateDialogMask').remove();
+						});
+						// 点击遮罩关闭
+						$('#templateDialogMask').off('click').on('click', function(){
+							$('#templateDialog').remove();
+							$('#templateDialogMask').remove();
+						});
+					});
+				},
+				saveAsTemplateBtn: function(){
+					var name = prompt('请输入模板名称（中文/英文均可）');
+					if(!name) return;
+					// 生成文件名
+					var file = name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_').replace(/\s+/g, '_').toLowerCase() + '.json';
+					// 获取当前 JSON
+					var jsonStr = '';
+					if(_pri.node && _pri.node.enterValue){
+						jsonStr = _pri.node.enterValue.value;
+					}else if(document.getElementById('enterValue')){
+						jsonStr = document.getElementById('enterValue').value;
+					}
+					// 下载 json 文件
+					var blob = new Blob([jsonStr], {type: 'application/json'});
+					var a = document.createElement('a');
+					a.href = URL.createObjectURL(blob);
+					a.download = file;
+					a.style.display = 'none';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					// 更新 index.json 内容
+					loadTemplates(function(list){
+						list.push({name: name, file: file});
+						var indexBlob = new Blob([JSON.stringify(list, null, 2)], {type: 'application/json'});
+						var a2 = document.createElement('a');
+						a2.href = URL.createObjectURL(indexBlob);
+						a2.download = 'index.json';
+						a2.style.display = 'none';
+						document.body.appendChild(a2);
+						a2.click();
+						document.body.removeChild(a2);
+						alert('模板已下载，请将新模板和 index.json 一起放入 templates 目录下。');
+					});
 				},
 				inputShowPath: function(){
 					var eV = $('#showValue')[0];
@@ -813,36 +895,37 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 					$('#msgBox').html('');
 				},4000);
 			},
-			"showEnterInputDialog" : function (sJson) {
-				sJson = sJson || '\u007b\u000d\u000a\u0020\u0020\u0020\u0020\u0022\u006c\u0031\u0022\u003a\u0020\u007b\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0031\u005f\u0031\u0022\u003a\u0020\u005b\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0031\u005f\u0031\u005f\u0031\u0022\u002c\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0031\u005f\u0031\u005f\u0032\u0022\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u005d\u002c\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0031\u005f\u0032\u0022\u003a\u0020\u007b\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0031\u005f\u0032\u005f\u0031\u0022\u003a\u0020\u0031\u0032\u0031\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u007d\u000d\u000a\u0020\u0020\u0020\u0020\u007d\u002c\u000d\u000a\u0020\u0020\u0020\u0020\u0022\u006c\u0032\u0022\u003a\u0020\u007b\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0032\u005f\u0031\u0022\u003a\u0020\u006e\u0075\u006c\u006c\u002c\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0032\u005f\u0032\u0022\u003a\u0020\u0074\u0072\u0075\u0065\u002c\u000d\u000a\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0020\u0022\u006c\u0032\u005f\u0033\u0022\u003a\u0020\u007b\u007d\u000d\u000a\u0020\u0020\u0020\u0020\u007d\u000d\u000a\u007d';
-				//sJson = JSON.stringify({
-					//"l1": {
-						//"l1_1": [
-							//'http://toy.ggg/ad/ad1.png',
-							//'http://toy.ggg/ad/ad2.png',
-							//'http://toy.ggg/ad/ad3.png',
-							//'http://toy.ggg/ad/ad4.png',
-							////"https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=2997908931,3785893858&fm=58&t=.jpg",
-							////"http://thumbs.dreamstime.com/z/%CA%AF%BD%A3-16312849.jpg",
-							////"https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=2997908931,3785893858&fm=58&t=.jpag",
-							////"https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=2997908931,3785893858&fm=58&t=.japg",
-							////"https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=2997908931,3785893858&fm=58&t=.jpag",
-							////"http://b.hiphotos.baidu.com/zhidao/pic/item/9f510fb30f2442a7688dff7ad143ad4bd0130269.jpg"
-						//],
-						//"l1_2": {
-							//"l1_2_1": "https://ss0.baidu.com/6ONWsjip0QIZ8tyhnq/it/u=2997908931,3785893858&fm=58&t=.jpg"
-						//}
-					//},
-					//"l2": {
-						//"l2_1": null,
-						//"l2_2": true,
-						//"l2_3": {}
-					//}
-				//});
-				// sJson = ss;
-				sJson = '{"name":"BeJson","url":"http://www.bejson.com","page":88,"isNonProfit":true,"address":{"street":"科技园路.","city":"江苏苏州","country":"中国"},"links":[{"name":"Google","flag":true,"url":"http://www.google.com"},{"name":"Baidu","flag":true,"url":"http://www.baidu.com"},{"name":"SoSo","flag":false,"url":"http://www.SoSo.com"}]}'
-				$('#mask').show();
-				_pri.node['enterValue'].value = sJson;
+			"showEnterInputDialog" : function (sJson, errorMsg, errorLine, errorCol) {
+				var setValue = function(jsonStr) {
+					$('#mask').show();
+					_pri.node['enterValue'].value = jsonStr;
+					// 错误提示
+					if(errorMsg) {
+						var msg = '<span style="color:red;font-weight:bold;">'+(_pri.oLang ? _pri.oLang.getStr('msg_4') : 'JSON格式错误')+'</span>';
+						if(errorLine && errorCol) {
+							msg += '<br><span style="color:red;">'+(_pri.oLang ? (_pri.oLang.getStr('msg_5', '', errorLine) + '，第'+errorCol+'列') : ('@第'+errorLine+'行，第'+errorCol+'列'))+'</span>';
+						}
+						msg += '<br><span style="color:red;">'+errorMsg+'</span>';
+						$(_pri.node['enterInputTips']).html('Input JSON String...<br>'+msg);
+						// 高亮输入框错误位置
+						var lines = jsonStr.split('\n');
+						var pos = 0;
+						for(var i=0;i<errorLine-1;i++) pos += lines[i].length+1;
+						pos += (errorCol?errorCol-1:0);
+						var input = _pri.node['enterValue'];
+						if(input.setSelectionRange) {
+							input.focus();
+							input.setSelectionRange(pos, pos+1);
+						}
+					} else {
+						$(_pri.node['enterInputTips']).html('Input JSON String...');
+					}
+				};
+				if (!sJson) {
+					loadDefaultJson(setValue);
+				} else {
+					setValue(sJson);
+				}
 			},
 			"hideEnterInputDialog" : function () {
 				$('#mask').hide();
@@ -954,6 +1037,41 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 
 
 
+		// 新增：模板插入功能
+		function loadTemplates(callback) {
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'templates/index.json', true);
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						try {
+							var list = JSON.parse(xhr.responseText);
+							callback(list);
+						} catch (e) {
+							callback([]);
+						}
+					} else {
+						callback([]);
+					}
+				}
+			};
+			xhr.send();
+		}
+		function loadTemplateContent(filename, callback) {
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'templates/' + filename, true);
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						callback(xhr.responseText);
+					} else {
+						callback('');
+					}
+				}
+			};
+			xhr.send();
+		}
+
 		return _pub;
 
 	};
@@ -964,3 +1082,19 @@ JH.mod.add(['jsonH.nav', 'listenResizeWin', 'ad', 'lang'], 'jsonH', function (mo
 
 	});
 });
+
+// 新增：异步加载默认 JSON
+function loadDefaultJson(callback) {
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', 'init.json', true);
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState === 4) {
+			if (xhr.status === 200) {
+				callback(xhr.responseText);
+			} else {
+				callback('{\n    "l1": {\n        "l1_1": [\n            "l1_1_1",\n            "l1_1_2"\n        ],\n        "l1_2": {\n            "l1_2_1": 121\n        }\n    },\n    "l2": {\n        "l2_1": null,\n        "l2_2": true,\n        "l2_3": {}\n    }\n}'); // 兜底
+			}
+		}
+	};
+	xhr.send();
+}

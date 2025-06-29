@@ -1,0 +1,23 @@
+{
+  "id": 1,
+  "name": "张三",
+  "username": "zhangsan",
+  "email": "zhangsan@example.com",
+  "phone": "+86-13800138000",
+  "roles": ["admin", "user"],
+  "status": "active",
+  "avatar": "https://example.com/avatar/zhangsan.png",
+  "createdAt": "2023-01-01T10:00:00Z",
+  "lastLogin": "2023-06-01T09:30:00Z",
+  "profile": {
+    "gender": "male",
+    "age": 28,
+    "address": {
+      "country": "中国",
+      "province": "江苏省",
+      "city": "苏州市",
+      "street": "科技园路 1 号"
+    },
+    "interests": ["编程", "阅读", "旅行"]
+  }
+} 

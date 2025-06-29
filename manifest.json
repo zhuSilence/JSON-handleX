@@ -4,7 +4,7 @@
    },
    "browser_action": {
       "default_icon": "logo16.png",
-      "default_title": "JSON-handle"
+      "default_title": "JSON-path"
    },
    "content_scripts": [ {
       "all_frames": false,
@@ -27,5 +27,5 @@
    "permissions": [ "contextMenus", "webRequest", "tabs", "\u003Call_urls>" ],
    "update_url": "https://clients2.google.com/service/update2/crx",
    "version": "1.0.0",
-   "web_accessible_resources": [ "JSON-handle/JSON-handle.html", "options.html" ]
+   "web_accessible_resources": [ "JSON-path/JSON-path.html", "options.html" ]
 }

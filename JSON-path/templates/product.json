@@ -1,0 +1,24 @@
+{
+  "id": 1001,
+  "name": "示例商品",
+  "sku": "SKU-20230601-001",
+  "price": 199.99,
+  "currency": "CNY",
+  "inStock": true,
+  "stockCount": 120,
+  "tags": ["新品", "热卖"],
+  "category": "电子产品",
+  "brand": "示例品牌",
+  "images": [
+    "https://example.com/product/1001/img1.jpg",
+    "https://example.com/product/1001/img2.jpg"
+  ],
+  "description": "这是一款高品质的示例商品，适合各种场景使用。",
+  "specs": {
+    "color": "黑色",
+    "weight": "1.2kg",
+    "size": "20x10x5cm"
+  },
+  "createdAt": "2023-06-01T10:00:00Z",
+  "updatedAt": "2023-06-10T15:30:00Z"
+} 

@@ -115,7 +115,7 @@ chrome.extension.sendRequest({cmd:'getIni'}, (function () {
 			eStyle.innerHTML = sStyle;
 			document.getElementsByTagName('head')[0].appendChild(eStyle);
 
-			document.body.innerHTML = '<span class="_tipsLoading tips-loading">JSON-Handle is loading...</span>';
+			document.body.innerHTML = '<span class="_tipsLoading tips-loading">JSON-path is loading...</span>';
 		};
 
 		_pri["strongKey"] = function (sJson) {
@@ -177,7 +177,7 @@ chrome.extension.sendRequest({cmd:'getIni'}, (function () {
 				oView.style.height = '100%';
 				oView.style.border = 'none';
 				//oView.src = 'http://toy.ggg/chromeEx/test/content_iframe.html';
-				oView.src = chrome.extension.getURL("JSON-handle/JSON-handle.html");
+				oView.src = chrome.extension.getURL("JSON-path/JSON-path.html");
 				document.body.appendChild(oView);
 				window.addEventListener("message", function (evt) {
 					var sUrl = chrome.extension.getURL('');
@@ -187,7 +187,7 @@ chrome.extension.sendRequest({cmd:'getIni'}, (function () {
 							return;
 						}
 						if(evt.data.cmd === 'jhLoadedError') {
-							$tipsLoading.firstChild.data = 'JSON-Handle throw a error msg : <br />' + evt.data.msg;
+							$tipsLoading.firstChild.data = 'JSON-path throw a error msg : <br />' + evt.data.msg;
 						}else{
 							$tipsLoading.parentNode.removeChild($tipsLoading);
 							var eS = document.getElementById('tipsStyle');
