@@ -44,7 +44,7 @@ JH.request = JH.newFun(function (JH) {
 				switch(sKey) {
 					case 'openTab':
 						oRe = buildSend(function (oRequestData, fResponse) {
-							chrome.extension.sendRequest({cmd:'openTab', data:oRequestData}, function(response) {
+							chrome.runtime.sendMessage({cmd:'openTab', data:oRequestData}, function(response) {
 								var oData = {
 									code : 1,
 									msg : 'ok',
@@ -56,7 +56,7 @@ JH.request = JH.newFun(function (JH) {
 						break;
 					case 'getJsonString':
 						oRe = buildSend(function (oRequestData, fResponse) {
-							chrome.extension.sendRequest({cmd:'getJson'}, function(response) {
+							chrome.runtime.sendMessage({cmd:'getJson'}, function(response) {
 								var oData = {
 									code : 1,
 									msg : 'ok',
@@ -68,7 +68,7 @@ JH.request = JH.newFun(function (JH) {
 						break;
 					case 'getAdData':
 						oRe = buildSend(function (oRequestData, fResponse) {
-							chrome.extension.sendRequest({
+							chrome.runtime.sendMessage({
 								cmd:'getAdData',
 								data : {
 									url : oRequestData.url
@@ -85,7 +85,7 @@ JH.request = JH.newFun(function (JH) {
 						break;
 					case 'setIni':
 						oRe = buildSend(function (oRequestData, fResponse) {
-							chrome.extension.sendRequest({
+							chrome.runtime.sendMessage({
 								cmd:'setIni'
 								, oIni : oRequestData
 							}, function(response) {
@@ -100,7 +100,7 @@ JH.request = JH.newFun(function (JH) {
 						break;
 					case 'getIni':
 						oRe = buildSend(function (oRequestData, fResponse) {
-							chrome.extension.sendRequest({
+							chrome.runtime.sendMessage({
 								cmd:'getIni'
 							}, function(response) {
 								var oDefault = {

@@ -1,25 +1,25 @@
 //alert('content_scripts.js');
 
-chrome.extension.sendRequest({cmd:'getIni'}, (function () {
+chrome.runtime.sendMessage({cmd:'getIni'}, (function () {
 	var _pub_static = function () {var _pri = {}, _pub = {};
 		var _init = function (oIni) {
 			_pri["oIni"] = oIni;
 			if(oIni && oIni.able && _pri.isJson()) {
 				_pri.createView();
 			}else{
-				chrome.extension.onRequest.addListener(function (request, sender, sendResponse) {
+				chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 					switch(request.cmd) {
 						case 'runJhInPage':
 							if(_pri.isJson()) {
 								_pri.createView();
+								sendResponse({status: "view created"});
 							}else{
 								alert('Found not JSON text.');
+								sendResponse({status: "not json"});
 							}
-
 							break;
-						
 					}
-
+					return true; // Keep message channel open for async response
 				});
 			}
 		};
@@ -132,7 +132,7 @@ chrome.extension.sendRequest({cmd:'getIni'}, (function () {
 		_pri["createView"] = function () {
 			document.body.innerHTML = '';
 			document.getElementsByTagName('head')[0].innerHTML = '';
-			chrome.extension.sendRequest({
+			chrome.runtime.sendMessage({
 				cmd : 'setJson'
 				, sJson : _pri.sData
 			}, function() {
@@ -144,7 +144,7 @@ chrome.extension.sendRequest({cmd:'getIni'}, (function () {
 						
 						bMiniMalism = true;
 						document.body.className += ' minimalism';
-						chrome.extension.sendRequest({cmd : 'getJson'});
+						chrome.runtime.sendMessage({cmd : 'getJson'});
 						
 						var sMStyle = [
 							'body {line-height:1.6em;color:#2d47a2;background-color:#fcfcff;}',
@@ -177,10 +177,10 @@ chrome.extension.sendRequest({cmd:'getIni'}, (function () {
 				oView.style.height = '100%';
 				oView.style.border = 'none';
 				//oView.src = 'http://toy.ggg/chromeEx/test/content_iframe.html';
-				oView.src = chrome.extension.getURL("JSON-path/JSON-path.html");
+				oView.src = chrome.runtime.getURL("JSON-path/JSON-path.html");
 				document.body.appendChild(oView);
 				window.addEventListener("message", function (evt) {
-					var sUrl = chrome.extension.getURL('');
+					var sUrl = chrome.runtime.getURL('');
 					if(evt.origin == sUrl.slice(0, -1)) {
 						var $tipsLoading = document.querySelector('._tipsLoading');
 						if (!$tipsLoading) {

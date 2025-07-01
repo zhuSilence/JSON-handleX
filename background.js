@@ -14,9 +14,9 @@ var oDefaultIni = {
 };
 
 
-if(!localStorage['jhIni']) {
-	localStorage['jhIni'] = JSON.stringify(oDefaultIni);
-}
+// if(!chrome.storage.local.get('jhIni')) {
+// 	chrome.storage.local.set('jhIni') = JSON.stringify(oDefaultIni);
+// }
 
 var Http = (function () {
 	var _fun = function (oA){
@@ -131,103 +131,120 @@ var Http = (function () {
 
 
 function openJH() {
-	var jsonH_url = chrome.extension.getURL("JSON-path/JSON-path.html");
-	var oIni = JSON.parse(localStorage['jhIni'] || {});
-	if(oIni.openJhMode === 'tab') {
-		chrome.tabs.create({"url":jsonH_url, "selected":true});
-	}else{
-		chrome.windows.create({url: jsonH_url, type: "popup", width: 1024, height: 768});
-	}
+	chrome.storage.local.get('jhIni', function(result) {
+		var oIni = result.jhIni || oDefaultIni;
+		var jsonH_url = chrome.runtime.getURL("JSON-path/JSON-path.html");
+		if (oIni.openJhMode === 'tab') {
+			chrome.tabs.create({ "url": jsonH_url, "selected": true });
+		} else {
+			chrome.windows.create({ url: jsonH_url, type: "popup", width: 1024, height: 768 });
+		}
+	});
 }
 
-chrome.browserAction.onClicked.addListener(function( tab ) {
+chrome.action.onClicked.addListener(function(tab) {
 	openJH();
 });
 
-chrome.extension.onRequest.addListener(function (request, sender, sendResponse) {
-
-
-	switch(request.cmd) {
-		case 'setJson':
-			chrome.browserAction.sJson = request.sJson;
-			sendResponse({});
-			break;
-		case 'openTab':
-			chrome.tabs.create({"url":request.data, "selected":true}, function (oTab) {
-				chrome.windows.update(oTab.windowId, {
-					focused : true
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	try {
+		switch(request.cmd) {
+			case 'setJson':
+				chrome.storage.local.set({ sJson: request.sJson }, function() {
+					sendResponse({});
 				});
-			});
-			sendResponse({});
-			break;
-		case 'getAdData':
-			var oHttp = Http({
-				method:'GET',
-				url:request.data.url,
-				resultType:'json' ,
-				onSuccess:function (oJson) {
-					sendResponse(oJson);
-				}
-			});
-			
-			break;
-		case 'getJson':
-			sendResponse(chrome.browserAction.sJson);
-			chrome.browserAction.sJson = null;
-			break;
-		case 'setIni':
-			var oIni = JSON.parse(localStorage['jhIni']);
-			var i;
-			for (i in request.oIni) {if(request.oIni.hasOwnProperty(i)) {
-				oIni[i] = request.oIni[i];
-			}}
-			localStorage['jhIni'] = JSON.stringify(oIni);
-			sendResponse({});
-			break;
-		case 'getIni':
-			var sIni = localStorage['jhIni'] || '{}';
-			var oIni = JSON.parse(sIni);
-			for (var k in oDefaultIni) {
-				if(oIni[k] === undefined) {
-					oIni[k] = oDefaultIni[k];
-				}
-			}
-			sendResponse(oIni);
-			break;
-		case 'getJhData':
-			sendResponse({
-				jhPath : chrome.extension.getURL('JSON-path/')
-			});
-			break;
-		case 'env js ok':
-		case 'content script ok':
-			break;
-		default:
-			throw new Error('bg 收到的 cmd 不正确');
-		
+				return true;
+			case 'openTab':
+				chrome.tabs.create({"url":request.data, "selected":true}, function (oTab) {
+					chrome.windows.update(oTab.windowId, {
+						focused : true
+					});
+					sendResponse({});
+				});
+				return true;
+			case 'getAdData':
+				fetch(request.data.url)
+					.then(response => response.json())
+					.then(data => sendResponse(data))
+					.catch(error => sendResponse({error: error.toString()}));
+				return true;
+			case 'getJson':
+				chrome.storage.local.get('sJson', function(data) {
+					sendResponse(data.sJson);
+					chrome.storage.local.remove('sJson');
+				});
+				return true;
+			case 'setIni':
+				chrome.storage.local.get('jhIni', function(result) {
+					var oIni = result.jhIni || {};
+					for (var i in request.oIni) {
+						if(request.oIni.hasOwnProperty(i)) {
+							oIni[i] = request.oIni[i];
+						}
+					}
+					chrome.storage.local.set({ jhIni: oIni }, function() {
+						sendResponse({});
+					});
+				});
+				return true;
+			case 'getIni':
+				chrome.storage.local.get('jhIni', function(result) {
+					var sIni = result.jhIni || {};
+					for (var k in oDefaultIni) {
+						if(sIni[k] === undefined) {
+							sIni[k] = oDefaultIni[k];
+						}
+					}
+					sendResponse(sIni);
+				});
+				return true;
+			case 'getJhData':
+				sendResponse({
+					jhPath : chrome.runtime.getURL('JSON-path/')
+				});
+				break;
+			case 'env js ok':
+			case 'content script ok':
+				break;
+			default:
+				throw new Error('bg 收到的 cmd 不正确');
+		}
+	} catch (e) {
+		console.error('background.js error:', e);
 	}
-
 });
 
 
+// MV3-specific initialization
+chrome.runtime.onInstalled.addListener(() => {
+	chrome.storage.local.get('jhIni', (result) => {
+		if (!result.jhIni) {
+			chrome.storage.local.set({ jhIni: oDefaultIni });
+		}
+	});
+	contextsMenu(); // Initialize context menus on installation
+});
+
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
-	if(changeInfo.status == 'loading') {
-		if (tab.url && tab.url.indexOf('chrome-extension:') === 0){
+	if (changeInfo.status === 'loading') {
+		if (!tab.url || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('chrome://')) {
 			return;
 		}
-		chrome.tabs.executeScript(tabId, {
-			runAt : 'document_start',
-			code : [
-
-				'try{',
-					'var bHasScript = document.querySelectorAll("script").length > 0;',
-					'var bHasCss = document.querySelectorAll(\'link[rel="stylesheet"]\').length > 0;',
-					'var bHasTitle = !!document.getElementsByTagName("title").length;',
-					//'debugger;alert(document.documentElement.innerHTML);',
-				'}catch(e) {}'
-
-			].join('')
-		});
+		try {
+			chrome.scripting.executeScript({
+				target: { tabId: tabId },
+				func: () => {
+					try{
+						window.bHasScript = document.querySelectorAll("script").length > 0;
+						window.bHasCss = document.querySelectorAll('link[rel="stylesheet"]').length > 0;
+						window.bHasTitle = !!document.getElementsByTagName("title").length;
+					}catch(e) {}
+				},
+				injectImmediately: true
+			});
+		} catch (e) {
+			console.warn('executeScript failed:', e);
+		}
 	}
 });
 
@@ -243,70 +260,67 @@ chrome.webRequest.onResponseStarted.addListener(function (oD) {
 		});
 
 		if(sContetnType.split(';')[0] === 'text/html') {
-			chrome.tabs.executeScript(oD.tabId, {
-				runAt : 'document_start',
-				code : [
-
-					'var beHtml = true;'
-
-				].join('')
-			});
+			// 只注入到普通网页
+			if (oD.tabId && oD.url && !oD.url.startsWith('chrome-extension://') && !oD.url.startsWith('chrome://')) {
+				try {
+					chrome.scripting.executeScript({
+						target: { tabId: oD.tabId },
+						func: () => { window.beHtml = true; },
+						injectImmediately: true
+					});
+				} catch (e) {
+					console.warn('executeScript failed:', e);
+				}
+			}
 		}
 	}
-	
 },{urls: ['<all_urls>']}, ['responseHeaders']);
 
 
 
-var contextsMenu = (function () {
-	var _pub_static = function () {var _pub = {}, _pri = {}, _pro = {};
-		var _init = function () {
-			
-			var contexts = ["page","selection"];
-			var oIni = JSON.parse(localStorage['jhIni'] || {});
-			if(oIni.contextsMenu) {
-				contexts.forEach(function (name) {
-					chrome.contextMenus.create({
-						"title": 'JSON-path (' + name + ')', 
-						"contexts":[name],
-						"onclick": _pri.genericOnClick
+var contextsMenu = (function() {
+	var _pub_static = function() {
+		var _pub = {},
+			_pri = {},
+			_pro = {};
+		var _init = function() {
+
+			var contexts = ["page", "selection"];
+			chrome.storage.local.get('jhIni', function(result) {
+				var oIni = result.jhIni || oDefaultIni;
+				if (oIni.contextsMenu) {
+					chrome.contextMenus.removeAll(function() {
+						contexts.forEach(function(name) {
+							chrome.contextMenus.create({
+								"id": "jh_" + name,
+								"title": 'JSON-path (' + name + ')',
+								"contexts": [name]
+							});
+						});
 					});
+				}
+			});
+		};
+
+		_pri["genericOnClick"] = function(info, tab) {
+			if (info.selectionText) {
+				chrome.storage.local.set({ sJson: info.selectionText }, function() {
+					openJH();
 				});
+			} else {
+				if (tab && tab.id) {
+					chrome.tabs.sendMessage(tab.id, { cmd: 'runJhInPage' }).catch(e => console.log(e));
+				}
 			}
-
-
-			
 		};
 
-		_pri["genericOnClick"] = function (info, tab) {
-		  if(info.selectionText) {
-			chrome.browserAction.sJson = info.selectionText;
-			openJH();
-		  }else{
-			chrome.tabs.sendRequest(tab.id, {cmd: 'runJhInPage'});
-		  }
-		  
-		};
+		chrome.contextMenus.onClicked.addListener(_pri.genericOnClick);
 
-		switch(this+'') {
-			case 'test':
-				_pub._pri = _pri;
-			case 'extend':
-				_pub._pro = _pro;
-				_pub._init = _init;
-				break;
-			default:
-				delete _pub._init;
-				delete _pub._pro;
-				_init.apply(_pub, arguments);
-		}
+		_init();
+
 		return _pub;
 	};
 
-	
-
 	return _pub_static;
 }());
-
-contextsMenu();
 
