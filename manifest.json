@@ -15,7 +15,7 @@
    },
    "action": {
       "default_icon": "logo16.png",
-      "default_title": "JSOIN-path"
+      "default_title": "JSON-path"
    },
    "options_page": "options.html",
    "content_scripts": [ {
